@@ -1,0 +1,147 @@
+[
+{
+"title": "Positive: Security Access granted successfully in Programming Session",
+"type": "Positive",
+"preconditions": [
+"ECU powered ON",
+"Default Session active"
+],
+"steps": [
+"Request ECU status: 22 XX XX",
+"Switch to Extended Diagnostic Session: 10 03",
+"Check programming preconditions: 31 01 XX XX",
+"Disable DTC setting: 85 02",
+"Disable non-diagnostic communication: 28 01 01",
+"Switch to Programming Session: 10 02",
+"Request Security Access seed: 27 YY",
+"Send Security Access key with valid calculated key: 27 ZZ XX XX"
+],
+"expected": [
+"Response to 22: 62 XX XX",
+"Response to 10 03: 50 03",
+"Response to 31 01: 71 01 XX XX",
+"Response to 85 02: C5 02",
+"Response to 28 01: 68 01 01",
+"Response to 10 02: 50 02",
+"Response to 27 YY: 67 YY XX XX (Seed provided)",
+"Response to 27 ZZ: 67 ZZ (Security Access granted)"
+],
+"postconditions": [
+"ECU is successfully unlocked",
+"Security Access level granted"
+]
+},
+{
+"title": "Negative: Security Access rejected in Extended Session",
+"type": "Negative",
+"preconditions": [
+"ECU powered ON",
+"Default Session active"
+],
+"steps": [
+"Request ECU status: 22 XX XX",
+"Switch to Extended Diagnostic Session: 10 03",
+"Intentional abnormal condition - Request Security Access seed outside Programming Session: 27 YY"
+],
+"expected": [
+"Response to 22: 62 XX XX",
+"Response to 10 03: 50 03",
+"Response to 27 YY: 7F 27 7E (SubFunctionNotSupportedInActiveSession) or 7F 27 31 (RequestOutOfRange) representing a violation if accepted"
+],
+"postconditions": [
+"ECU remains locked",
+"Extended Diagnostic Session remains active"
+]
+},
+{
+"title": "Negative: Security Access rejected due to Invalid Key in Programming Session",
+"type": "Negative",
+"preconditions": [
+"ECU powered ON",
+"Security access invalid attempt counter is at 0"
+],
+"steps": [
+"Request ECU status: 22 XX XX",
+"Switch to Extended Diagnostic Session: 10 03",
+"Check programming preconditions: 31 01 XX XX",
+"Disable DTC setting: 85 02",
+"Disable non-diagnostic communication: 28 01 01",
+"Switch to Programming Session: 10 02",
+"Request Security Access seed: 27 YY",
+"Intentional abnormal condition - Send Security Access key with incorrect data: 27 ZZ 00 00"
+],
+"expected": [
+"Response to 22: 62 XX XX",
+"Response to 10 03: 50 03",
+"Response to 31 01: 71 01 XX XX",
+"Response to 85 02: C5 02",
+"Response to 28 01: 68 01 01",
+"Response to 10 02: 50 02",
+"Response to 27 YY: 67 YY XX XX",
+"Response to 27 ZZ: 7F 27 35 (InvalidKey)"
+],
+"postconditions": [
+"ECU remains locked",
+"Security access invalid attempt counter incremented by 1"
+]
+},
+{
+"title": "Negative: Security Access rejected due to missing Seed request (Sequence Error)",
+"type": "Negative",
+"preconditions": [
+"ECU powered ON",
+"Default Session active"
+],
+"steps": [
+"Request ECU status: 22 XX XX",
+"Switch to Extended Diagnostic Session: 10 03",
+"Check programming preconditions: 31 01 XX XX",
+"Disable DTC setting: 85 02",
+"Disable non-diagnostic communication: 28 01 01",
+"Switch to Programming Session: 10 02",
+"Intentional abnormal condition - Send Security Access key without prior seed request: 27 ZZ XX XX"
+],
+"expected": [
+"Response to 22: 62 XX XX",
+"Response to 10 03: 50 03",
+"Response to 31 01: 71 01 XX XX",
+"Response to 85 02: C5 02",
+"Response to 28 01: 68 01 01",
+"Response to 10 02: 50 02",
+"Response to 27 ZZ: 7F 27 24 (RequestSequenceError)"
+],
+"postconditions": [
+"ECU remains locked"
+]
+},
+{
+"title": "Negative: Security Access locked out after exceeding maximum attempts",
+"type": "Negative",
+"preconditions": [
+"ECU powered ON",
+"Security access invalid attempt counter reached maximum value"
+],
+"steps": [
+"Request ECU status: 22 XX XX",
+"Switch to Extended Diagnostic Session: 10 03",
+"Check programming preconditions: 31 01 XX XX",
+"Disable DTC setting: 85 02",
+"Disable non-diagnostic communication: 28 01 01",
+"Switch to Programming Session: 10 02",
+"Intentional abnormal condition - Request Security Access seed when lockout is active: 27 YY"
+],
+"expected": [
+"Response to 22: 62 XX XX",
+"Response to 10 03: 50 03",
+"Response to 31 01: 71 01 XX XX",
+"Response to 85 02: C5 02",
+"Response to 28 01: 68 01 01",
+"Response to 10 02: 50 02",
+"Response to 27 YY: 7F 27 36 (ExceededNumberOfAttempts)"
+],
+"postconditions": [
+"ECU remains locked",
+"Security delay timer (S4) is active and running"
+]
+}
+]
